@@ -1,8 +1,11 @@
 package manageStudent;
 
+import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashSet;
+
+import javax.swing.JFileChooser;
 
 public class studentHandle {
      ArrayList<student> stuList = new ArrayList<>();
@@ -11,14 +14,18 @@ public class studentHandle {
      ArrayList<String> line = new ArrayList<>();
      ArrayList<String> linestore = new ArrayList<>();
      HashSet<Integer> checkStudentID = new HashSet<>();
+     String Filepath = "";
      
      int maxHomeID = 1;
-     int maxStudentID = 0;
+     int maxStudentID = 9999;
      fileHandle fh = new fileHandle();
      
      public void inputHomeFromFile() 
      {
+    	 maxHomeID = 1;
     	 homeList.clear();
+   
+    	 //
     	 try {
 			fh.inputFile("quequan.txt", line);
 		} catch (IOException e) {
@@ -58,9 +65,17 @@ public class studentHandle {
      
      public void inputStudentFromFile() 
      {
+    	 checkStudentID.clear();
+    	 maxStudentID = 9999;
     	 stuList.clear();
+    	 
+    	 JFileChooser fc = new JFileChooser(".");
+			fc.showOpenDialog(null); 	// mo cua so de chon file
+			File f = fc.getSelectedFile();	// lay file dc chon
+		    Filepath =  f.getAbsolutePath();	// lay duong dan den file duoc chon
+		    
          try {
-			fh.inputFile("thisinh.txt", line);
+			fh.inputFile(Filepath, line);
 		} catch (IOException e) {
 			System.out.println("Error: " + e.toString());
 		}
@@ -91,19 +106,19 @@ public class studentHandle {
         		 checkStudentID.add(st.getStudentID());
         		 
         	 }
-         line.clear();
+              line.clear();
      }
      public void outputStudentToFile() 
      {
     	 for(int i = 0 ; i < stuList.size() ; i++)
     		 line.add(stuList.get(i).toString());
     	 try {
-			fh.outputFile("thisinh.txt", line);
+			fh.outputFile(Filepath, line);
 		} catch (IOException e) {
 			System.out.println("Error: " + e.toString());
 		}
     	 line.clear();
-    	 System.out.println("Student done");
+    	 stuList.clear();
      }
      public void outputHomeToFile() 
      {
@@ -118,7 +133,7 @@ public class studentHandle {
 			System.out.println("Error: " + e.toString());
 		}
     	 line.clear();
-    	 System.out.println("Home done");
+    	 homeList.clear();
      }
      public int addNewHome(String s)
      {
