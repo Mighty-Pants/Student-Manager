@@ -11,14 +11,12 @@ import java.awt.event.MouseListener;
 import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
 import java.awt.event.WindowListener;
-import java.io.IOException;
 import java.util.List;
 import java.util.ArrayList;
-import java.util.Map;
-import java.util.HashMap;
 import java.util.HashSet;
 import java.awt.event.ActionEvent;
 import javax.swing.JTextField;
+import javax.swing.AbstractButton;
 import javax.swing.ButtonGroup;
 import javax.swing.GroupLayout;
 import javax.swing.GroupLayout.Alignment;
@@ -37,6 +35,10 @@ import javax.swing.LayoutStyle.ComponentPlacement;
 import javax.swing.RowFilter;
 import javax.swing.RowSorter;
 import javax.swing.SortOrder;
+import javax.swing.SwingUtilities;
+import javax.swing.UIManager;
+import javax.swing.UnsupportedLookAndFeelException;
+
 import java.awt.Font;
 import javax.swing.JTable;
 import javax.swing.JRadioButton;
@@ -60,25 +62,33 @@ public class mainFrame extends JFrame {
 	private JTextField textFieldChemistry;
 	private JTextField textFieldTotal;
 	
-	studentHandle stuHandle = new studentHandle();
-	ArrayList<student> stuList = new ArrayList<>();
-	ArrayList<home> homeList = new ArrayList<>();
+	static studentHandle stuHandle = new studentHandle();
+	static ArrayList<student> stuList = new ArrayList<>();
+	static ArrayList<home> homeList = new ArrayList<>();
 	ArrayList<student> findstu = new ArrayList<>();
 	HashSet<Integer> checkStudentID = new HashSet<>();
-	int rowIndex = 0, rowView = 0, maxStudentID = 0;
+	int rowIndex = 0, rowView = 0;
+	static int maxStudentID = 0;
+    static JTable table = new JTable();
 	Boolean isEdit = false, isOpen = false;
-
-	/**
-	 * Launch the application.
-	 */
-	
+	//Create Insert Form
+	insertPanel in;
 
 	/**
 	 * Create the frame.
 	 */
 	public mainFrame() {
 		
+		try {
+            UIManager.setLookAndFeel("com.sun.java.swing.plaf.windows.WindowsLookAndFeel");
+        } catch (ClassNotFoundException | InstantiationException |
+        		IllegalAccessException | UnsupportedLookAndFeelException ex) {
+           System.out.println(ex.toString());
+        }
+        SwingUtilities.updateComponentTreeUI(this);
+        
 		setMinimumSize(new Dimension(650, 600));
+	    setLocationRelativeTo(null);
 		setTitle("Student Manager");
 		setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
 		setBounds(100, 100, 647, 579);
@@ -200,9 +210,9 @@ public class mainFrame extends JFrame {
 			gl_panel_1.createParallelGroup(Alignment.LEADING)
 				.addComponent(scrollPane, Alignment.TRAILING, GroupLayout.DEFAULT_SIZE, 176, Short.MAX_VALUE)
 		);
-		
+
 		//Create Table
-	    JTable table = new JTable();
+
 		table.setModel(new DefaultTableModel(
 			new Object[][] { },
 			new String[] {
@@ -456,7 +466,7 @@ public class mainFrame extends JFrame {
             public void mousePressed(MouseEvent e)
             {
                 rowView = table.getSelectedRow();
-                rowIndex = table.convertRowIndexToView(rowView);
+                rowIndex = table.convertRowIndexToModel(rowView);
                 fillText(radioMale, radioFemale, tableModel);
             }
         });
@@ -513,6 +523,10 @@ public class mainFrame extends JFrame {
 				{
 				stuHandle.outputHomeToFile();
 				stuHandle.outputStudentToFile();
+				if(tableModel.getRowCount() > 0)
+					for(int i = tableModel.getRowCount() - 1 ; i >= 0 ; i--)
+						tableModel.removeRow(i);
+				isOpen = false;
 				}
 				else showMessage("Chua mo file");
 			}
@@ -555,15 +569,21 @@ public class mainFrame extends JFrame {
 		{
 			public void actionPerformed(ActionEvent e) {
 				student st = new student();
-				home hm = new home();
-				hm.setHomeID(-1);
-				dataValidation(radioMale, radioFemale, st, hm , -1);
-				if(hm.getHomeID() == -1) return;
-				stuList.add(st);
+				/*if(!dataValidation(radioMale, radioFemale, st, 1))
+				return;
+				stuList.add(st);*/
+				in = new insertPanel();
+				if(!in.isVisible())
+				{
+					in.clearText(in.bgg);
+					in.setVisible(true);
+				}
+				/*st = stuList.get(stuList.size() -1);
 				maxStudentID++;
 				stuHandle.updateMax();
 				stuHandle.updateCheckID(st.getStudentID());
-				printRow(tableModel , table.getRowCount() , st);
+				printRow(tableModel , table.getRowCount() , st);*/
+				
 			 }
 		});    
 		//Chon OK
@@ -571,23 +591,26 @@ public class mainFrame extends JFrame {
 		{
 			public void actionPerformed(ActionEvent e) {
 				student st = new student();
-				student swap = new student();
-				home hm = new home();
-				hm.setHomeID(-1);
-				dataValidation(radioMale, radioFemale, st, hm, stuList.get(rowIndex).getStudentID());
-				if(hm.getHomeID() == -1) return;
-				int result = JOptionPane.showConfirmDialog(rootPane,"Are you sure?");
+				if(!dataValidation(radioMale, radioFemale, st, 0))
+				 return;
+				int result = JOptionPane.showConfirmDialog(rootPane,"Are you sure?","Message",JOptionPane.YES_NO_OPTION);
 				if(result == JOptionPane.YES_OPTION)
 				{	
-				swap = stuList.get(rowIndex);
-				swap.setStudentID(st.getStudentID());
-				swap.setName(st.getName());
-				swap.setBirthdate(st.getBirthdate());
-				swap.setHomeID(st.getHomeID());
-				swap.setGender(st.isGender());
-				swap.setMath(st.getMath());
-				swap.setPhysic(st.getPhysic());
-				swap.setChemistry(st.getChemistry());
+
+				for(int i = 0 ; i < stuList.size() ; i++)
+				{
+				  if(stuList.get(i).getStudentID() == st.getStudentID())
+				  {
+					  stuList.get(i).setStudentID(st.getStudentID());
+					  stuList.get(i).setName(st.getName());
+					  stuList.get(i).setBirthdate(st.getBirthdate());
+					  stuList.get(i).setHomeID(st.getHomeID());
+					  stuList.get(i).setGender(st.isGender());
+					  stuList.get(i).setMath(st.getMath());
+					  stuList.get(i).setPhysic(st.getPhysic());
+					  stuList.get(i).setChemistry(st.getChemistry());
+				  }
+				}
 				//Thay doi data cua bang
 				tableModel.setValueAt(st.getStudentID(), rowIndex, 1);
 				tableModel.setValueAt(st.getName(), rowIndex, 2);
@@ -611,14 +634,13 @@ public class mainFrame extends JFrame {
 		btnDelete.addActionListener(new ActionListener() 
 		{
 			public void actionPerformed(ActionEvent e) {
-				int result = JOptionPane.showConfirmDialog(rootPane,"Are you sure?");
+				int result = JOptionPane.showConfirmDialog(rootPane,"Are you sure?","Message",JOptionPane.YES_NO_OPTION);
 				if(result == JOptionPane.YES_OPTION)
 				{	
-					int find = Integer.parseInt(textFieldID.getText());
-				     tableModel.removeRow(rowIndex);	
-				     for(int i = 0 ; i < stuList.size() ; i++)
-				    	 if(find == stuList.get(i).getHomeID())
-				    		 stuList.remove(i);
+				   tableModel.removeRow(rowIndex);	
+				   for(int i = 0 ; i < stuList.size() ; i++)
+					   if(stuList.get(i).getStudentID() == Integer.parseInt(textFieldID.getText()))
+						   stuList.remove(i);
 				}
 				if(result == JOptionPane.NO_OPTION || result == JOptionPane.CLOSED_OPTION)
 					setDefaultCloseOperation(JFrame.DO_NOTHING_ON_CLOSE);
@@ -633,8 +655,11 @@ public class mainFrame extends JFrame {
 				s1 = s1.trim();
 				s2 = s2.trim();
 				if(s1.equals("") && s2.equals("")) return;
-				sorter.setRowFilter(RowFilter.regexFilter(s1 , 3));
-				sorter.setRowFilter(RowFilter.regexFilter(s2 , 1));
+				List<RowFilter<Object,Object>> filters = new ArrayList<RowFilter<Object,Object>>(2);
+				s1 = String.format("(?i)%s", s1);
+				filters.add(RowFilter.regexFilter(s1 , 3));
+				filters.add(RowFilter.regexFilter(s2 , 1));
+				sorter.setRowFilter(RowFilter.andFilter(filters));
 			 }
 		});    
 		//Chon Return
@@ -643,8 +668,15 @@ public class mainFrame extends JFrame {
 			public void actionPerformed(ActionEvent e) {
 				//Tat filter
 				sorter.setRowFilter(null);
-				//In bang
-				printTable(tableModel , stuList);
+			 }
+		});    
+		//Chon about
+		menuAbout.addActionListener(new ActionListener() 
+		{
+			public void actionPerformed(ActionEvent e) {
+				JOptionPane.showMessageDialog(rootPane, "Nhom 10 Java CNTT3 - K59\n"
+						+ "- Pham Minh Tri\n- Nguyen Huu Thao\n- Dao Anh Khoa\n"
+						+ "- Luong Thi Huong\n- Nguyen Duc Vinh","About",JOptionPane.PLAIN_MESSAGE);
 			 }
 		});    
 		/* .addActionListener(new ActionListener() 
@@ -706,7 +738,7 @@ public class mainFrame extends JFrame {
 		}
 	}
 
-	public void printRow(DefaultTableModel tableModel, int i, student st) {
+	public static void printRow(DefaultTableModel tableModel, int i, student st) {
 		int studentID = st.getStudentID();
 		 String name = st.getName();
 		 String place = "";
@@ -721,9 +753,25 @@ public class mainFrame extends JFrame {
 		 tableModel.addRow(new Object[] {i + 1 , studentID , name , place ,
 				            date , sex , math, physical , chemistry});
 	}
+	public static void addRow(student st)
+	{
+		DefaultTableModel tableMo = (DefaultTableModel) table.getModel();
+		 int studentID = st.getStudentID();
+		 String name = st.getName();
+		 String place = "";
+		 int checkID = stuHandle.foundHomeID(st.getHomeID());
+		 if(checkID >= 0)  place = homeList.get(checkID).getName();
+		 String date = st.getBirthdate();
+		 String sex = "";
+		 if(st.isGender() == true) sex = "M";
+		 if(st.isGender() == false) sex = "FM";
+		 float math = st.getMath(), physical = st.getPhysic(), chemistry = st.getChemistry();
+		 int i = tableMo.getRowCount();
+		 tableMo.addRow(new Object[] {i , studentID , name , place ,
+				            date , sex , math, physical , chemistry});
+	}
 
 	public void setNonEdit(JRadioButton radioMale, JRadioButton radioFemale) {
-		textFieldID.setEditable(false);
 		textFieldName.setEditable(false);
 		textFieldDate.setEditable(false);
 		textFieldPlace.setEditable(false);
@@ -735,7 +783,6 @@ public class mainFrame extends JFrame {
 	}
 
 	public void setEdit(JRadioButton radioMale, JRadioButton radioFemale) {
-		textFieldID.setEditable(true);
 		textFieldName.setEditable(true);
 		textFieldDate.setEditable(true);
 		textFieldPlace.setEditable(true);
@@ -781,7 +828,7 @@ public class mainFrame extends JFrame {
 	   JOptionPane.showMessageDialog(rootPane, s,"Message",JOptionPane.WARNING_MESSAGE);
 	}
 
-	public void dataValidation(JRadioButton radioMale, JRadioButton radioFemale, student st, home done, int check) 
+	public boolean dataValidation(JRadioButton radioMale, JRadioButton radioFemale, student st,int ne) 
 	{
 		home hm = new home();
 		String textID = textFieldID.getText().trim();
@@ -791,55 +838,25 @@ public class mainFrame extends JFrame {
 		String textMath = textFieldMath.getText().trim();
 		String textPhysic = textFieldPhysic.getText().trim();
 		String textChemistry = textFieldChemistry.getText().trim();
-		//Kiem tra ID
-		//done.setHomeID(1);
-		if(!st.checkStudentID(textID))
+		//Tu tao ID
+		if(ne == 1)
 		{
-			showMessage("ID is invalid, new ID will be automatically generated!");
-			textFieldID.setText(String.valueOf(maxStudentID + 1));
-			return;
+	    textFieldID.setText(String.valueOf(maxStudentID + 1));
+	    st.setStudentID(maxStudentID +1);
 		}
-		if(check == -1)
-		{
-		if(checkStudentID.contains(Integer.parseInt(textID)))
-		{
-			showMessage("ID exists, new ID will be automatically generated!");
-			textFieldID.setText(String.valueOf(maxStudentID + 1));
-			return;
-		}
-		}
-		else 
-		{
-			if(checkStudentID.contains(Integer.parseInt(textID)) && Integer.parseInt(textID) != check)
-			{
-				showMessage("ID exists, new ID will be automatically generated!");
-				textFieldID.setText(String.valueOf(maxStudentID + 1));
-				return;
-			}
-		}
-		done.setHomeID(1);
-		if( Integer.parseInt(textID) <= 9999)
-		{
-			showMessage("ID is invalid, new ID will be automatically generated!");
-			textFieldID.setText(String.valueOf(maxStudentID + 1));
-			return;
-		}
-		if(st.checkStudentID(textID))
-		{
-			st.setStudentID(Integer.parseInt(textID));
-		}
+		else st.setStudentID(Integer.parseInt(textID));
 		//Kiem tra ten
 		if(!st.checkName(textName)) 
 		{
 		  showMessage("Name is invalid!");
-		  return;
+		  return false;
 		}
 		else st.setName(textName);
 		//Kiem tra que quan
 		if(!hm.checkName(textPlace))
 		{
 			showMessage("Place is invalid!");
-			return;
+			return false;
 		}
 		else 
 		{
@@ -854,14 +871,22 @@ public class mainFrame extends JFrame {
 		 if(!st.checkBirthdate(textDate))
 		 {
 			 showMessage("Birthdate is invalid!");
-			 return;
+			 return false;
 		 }
-		 else st.setBirthdate(textDate);
+		 else
+		 { 
+			 if(!st.checkBirthdateBound(textDate))
+		     {
+			 showMessage("Birthdate is invalid!");
+			 return false;
+		      }
+			 else st.setBirthdate(textDate);
+		 }
 		 //Kiem tra gioi tinh
 		 if(!radioMale.isSelected() && !radioFemale.isSelected())
 		 {
 			 showMessage("Choose gender!");
-			 return;
+			 return false;
 		 }
 		 else
 		 { 
@@ -872,14 +897,14 @@ public class mainFrame extends JFrame {
 		 if(!st.checkPoint(textMath))
 		 {
 			 showMessage("Mark is invalid!");
-			 return;
+			 return false;
 		 }
 		 else
 		 {
 			 if(!st.checkPointBound(Float.parseFloat(textMath)))
 			 {
 				 showMessage("Mark is invalid!");
-		    	 return;
+		    	 return false;
 			 }
 			 else st.setMath(Float.parseFloat(textMath));
 		 }
@@ -887,14 +912,14 @@ public class mainFrame extends JFrame {
 		 if(!st.checkPoint(textPhysic))
 		 {
 			 showMessage("Mark is invalid!");
-			 return;
+			 return false;
 		 }
 		 else
 		 {
 			 if(!st.checkPointBound(Float.parseFloat(textPhysic)))
 			 {
 				 showMessage("Mark is invalid!");
-		    	 return;
+		    	 return false;
 			 }
 			 else st.setPhysic(Float.parseFloat(textPhysic));
 		 }
@@ -902,16 +927,17 @@ public class mainFrame extends JFrame {
 		 if(!st.checkPoint(textChemistry))
 		 {
 			 showMessage("Mark is invalid!");
-			 return;
+			 return false;
 		 }
 		 else
 		 {
 			 if(!st.checkPointBound(Float.parseFloat(textChemistry)))
 			 {
 				 showMessage("Mark is invalid!");
-		    	 return;
+		    	 return false;
 			 }
 			 else st.setChemistry(Float.parseFloat(textChemistry));
 		 }
+		 return true;
 	}
 }

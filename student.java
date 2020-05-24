@@ -75,7 +75,7 @@ public class student {
 		if(checkHomeID(param[2]))
 			homeID = Integer.parseInt(param[2]);
 		
-		if(checkBirthdate(param[3]))
+		if(checkBirthdate(param[3]) && checkBirthdateBound(param[3]))
 			birthdate = param[3];
 		
 		if(param[4].equalsIgnoreCase("true"))
@@ -113,6 +113,44 @@ public class student {
   	public boolean checkBirthdate(String s)
   	{
   		return s.matches("^\\d{1,2}/\\d{1,2}/\\d{4}$");
+  	}
+  	public boolean checkBirthdateBound(String s)
+  	{
+  		String param[] = s.split("/", 3);
+  		int year = Integer.parseInt(param[2]);
+  		int month = Integer.parseInt(param[1]);
+  		int day = Integer.parseInt(param[0]);
+  		boolean isLunar = false;
+  		
+  		if(year < 1)
+  			return false;
+  		
+  		if(month < 1 || month > 12)
+  			return false;
+  		
+  		if(month == 1 || month == 3 || month == 5 || month == 7 || month == 8 ||
+  		   month == 10 || month == 12 )
+  		     if(day < 1 || day > 31)
+  			    return false;
+  		if(month == 4 || month == 6 || month == 9 || month == 11)
+  		   if(day < 1 || day > 30)
+  			    return false;
+  		if(year % 100 == 0)
+  		{
+  			if(year % 400 == 0)
+  				isLunar = true;
+  			else isLunar = false;
+  		}
+  		else if(year % 4 == 0) isLunar = true;
+  		
+  		if(month == 2 && isLunar == true)
+  			if(day < 1 || day > 29)
+  		        return false;
+  		if(month == 2 && isLunar == false)
+  			if(day < 1 || day > 28)
+  		        return false;
+  		  
+  		return true;
   	}
   	
   	public boolean checkPoint(String s)
